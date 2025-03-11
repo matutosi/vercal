@@ -95,22 +95,6 @@ def create_day(c,
     font_size_hour = font_size * 0.7
     top_hour = top - (h_year_month + h_wday_day + h_memo)
     h_hour = top_hour - bottom
-    # settings = {"left"           : left         , 
-    #             "right"          : right        ,
-    #             "top"            : top          ,
-    #             "top_hour"       : top_hour     ,
-    #             "year"           : year         ,
-    #             "month"          : month        ,
-    #             "day"            : day          ,
-    #             "wday"           : wday         ,
-    #             "h_year_month"   : h_year_month ,
-    #             "h_wday_day"     : h_wday_day   ,
-    #             "h_hour"         : h_hour       ,
-    #             "h_memo"         : h_memo       ,
-    #             "hour_start"     : hour_start   ,
-    #             "hour_end"       : hour_end     ,
-    #             "font_size_hour": font_size_hour,
-    #             }
     date_section(c, left,        top,      year, month, day, wday, h_year_month, h_wday_day, draw_year_month)
     memo_section(c, left, right, top,                              h_year_month, h_wday_day, h_memo)
     ten_minute  (c, left, right, top_hour, h_hour, hour_start, hour_end)
@@ -253,13 +237,12 @@ def calendar_weekly_vertical(year, month=range(12),
 # 
 if __name__ == '__main__':
 
-    font_path = 'D:/matu/work/ToDo/kwu/calendar/GenShinGothic-Monospace-Medium.ttf'
     font_path = 'c:/Windows/Fonts/CENTURY.ttf'
     font_path = 'c:/Windows/Fonts/ALGER.TTF'
     font_path = 'c:/Windows/Fonts/ITCBLKAD.TTF'
     font_path = 'c:/Windows/Fonts/BRUSHSCI.TTF'
     font_path = 'c:/Windows/Fonts/UDDigiKyokashoN-R.ttc'
-    font_path = 'D:/matu/work/ToDo/vercal/HackGen35Console-Regular.ttf' # not work in font directory
+    font_path = './HackGen35Console-Regular.ttf' # not work in font directory
 
     year            = 2025
     hour_start      = 6
