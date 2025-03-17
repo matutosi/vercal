@@ -91,7 +91,7 @@ if __name__ == '__main__':
     #     'event_start': ['10:30', '12:30'],
     #     'event_end': ['12:00', np.nan],
     #     'event': ['math', 'english'],
-    #     'except': ['2025-05-05,2025-05-12', '2025-05-05,2025-05-# 12'],
+    #     'except': ['2025-05-05,2025-05-12', '2025-05-05,2025-05-12'],
     # }
     # input_df = pd.DataFrame(input_data)
     # input_df.to_excel(path)
