@@ -10,7 +10,10 @@ import vercal
 # setgings
 hour_end  = 24
 df_event  = pd.DataFrame(columns=["date", "week_of_day","event_start","event_end","event"])
+
 font_path = 'HackGen35Console-Regular.ttf'
+if not os.path.exists(font_path):
+    font_path = None
 
 settings = st.sidebar
 
