@@ -234,15 +234,14 @@ def calendar_weekly_vertical(year, month=range(12),
     c.save()
     return calendar_path
 
-# 
 if __name__ == '__main__':
 
+    font_path = './HackGen35Console-Regular.ttf' # not work in font directory
     font_path = 'c:/Windows/Fonts/CENTURY.ttf'
     font_path = 'c:/Windows/Fonts/ALGER.TTF'
     font_path = 'c:/Windows/Fonts/ITCBLKAD.TTF'
     font_path = 'c:/Windows/Fonts/BRUSHSCI.TTF'
     font_path = 'c:/Windows/Fonts/UDDigiKyokashoN-R.ttc'
-    font_path = './HackGen35Console-Regular.ttf' # not work in font directory
 
     year            = 2025
     hour_start      = 6
@@ -252,7 +251,7 @@ if __name__ == '__main__':
 
     # event data
     import event
-    path = 'event.xlsx'
+    path = 'schedule.xlsx'
     df_input = pd.read_excel(path)
     df_date = event.generate_schedule(df_input)
     df_event = event.format_events(df_date)
