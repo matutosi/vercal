@@ -24,8 +24,8 @@ def create_year(year, start_april=True):
     # start with April
     cal_this_yr = generate_dates(year).query('month > 3')
     cal_next_yr = generate_dates(year + 1).query('month < 4')
-    calender = pd.concat([cal_this_yr, cal_next_yr])
-    return calender
+    calendar = pd.concat([cal_this_yr, cal_next_yr])
+    return calendar
 
 def generate_dates(year):
     """
@@ -33,7 +33,6 @@ def generate_dates(year):
     Examples
         year_to_generate = 2025
         date_df = generate_dates(year_to_generate)
-        print(date_df)
     """
     data = []
     for month in range(1, 13):
@@ -112,8 +111,9 @@ def create_day(c,
                 top_hour, left, 
                 width, h_hour, 
                 font_size_hour)
-    if draw_day_box:
-        day_box(c, left, top, width, height)
+    # day_box関数の呼び出しを削除
+    # if draw_day_box:
+    #     day_box(c, left, top, width, height)
 
 def draw_schedule(c, schedule, event_start, event_end, hour_start, hour_end, top_hour, left, width, h_hour, font_size_hour):
     hours = hour_end - hour_start
@@ -181,23 +181,23 @@ def ten_minute(c, left, right, top, h_hour, hour_start, hour_end):
         circle_size = ((i % 2) + 1) * 0.5 # even: large, odd: small
         c.circle(x, y, circle_size)
 
-def day_box(c, left, top, width, height):
-    """Draws a frame for debug."""
-    c.setLineWidth(1)
-    c.setDash([1, 0]) # [on, off]
-    c.line(left, top, left + width, top)
-    c.line(left, top - height, left + width, top - height)
-    c.line(left, top, left, top - height)
-    c.line(left + width, top, left + width, top - height)
+# def day_box(c, left, top, width, height): # 削除された関数
+#     """Draws a frame for debug."""
+#     c.setLineWidth(1)
+#     c.setDash([1, 0]) # [on, off]
+#     c.line(left, top, left + width, top)
+#     c.line(left, top - height, left + width, top - height)
+#     c.line(left, top, left, top - height)
+#     c.line(left + width, top, left + width, top - height)
 
 def calendar_weekly_vertical(year, month=range(12),
     start_april=True, starts_with_mon=True, adjust_left=True,
-    calendar_path=None, 
+    calendar_path=None,
     pagesize=A5, margin=5*mm,
     font_path=None, font_size=12,
-    hour_start=6, hour_end=24, 
+    hour_start=6, hour_end=24,
     df_event = pd.DataFrame(),
-    draw_day_box=False):
+    draw_day_box=False): # draw_day_boxは使用されなくなりますが、互換性のために残します
     # # # # settings # # # #
     # output path
     if not calendar_path:
@@ -221,7 +221,7 @@ def calendar_weekly_vertical(year, month=range(12),
             year, month, day, weekday, position, page, draw_year_month = df_page.iloc[i]
             left = margin + w_day * position
             top  = margin + h_day
-            create_day(c, 
+            create_day(c,
                        left, top, w_day, h_day,
                        font_name, font_size,
                        year=str(year), month=str(month), day=str(day), wday=weekday,
@@ -229,7 +229,34 @@ def calendar_weekly_vertical(year, month=range(12),
                        h_year_month=5*mm, h_wday_day=5*mm, h_memo=15*mm,
                        draw_year_month=draw_year_month,
                        df_event=df_event,
-                       draw_day_box=draw_day_box)
+                       draw_day_box=False) # 常にFalseを設定するか、引数を削除します。ここではFalseに固定
+        num_days_on_page = len(df_page)
+        days_per_page = 4 # 1ページあたりのブロック数
+        if num_days_on_page % days_per_page != 0:
+            start_position = num_days_on_page % days_per_page
+            num_empty_blocks = days_per_page - start_position
+            for i in range(num_empty_blocks):
+                position = start_position + i
+                left = margin + w_day * position
+                top  = margin + h_day
+                # day_box(c, left, top, w_day, h_day) # 全体枠線の呼び出しを削除
+                h_year_month=5*mm
+                h_wday_day=5*mm
+                h_memo=15*mm
+                top_line = top - (h_year_month + h_wday_day)
+                bottom_line = top - (h_year_month + h_wday_day + h_memo)
+                c.setDash([1, 0])
+                c.setLineWidth(0.8)
+                c.line(left, top_line, left + w_day, top_line)
+                c.line(left, bottom_line, left + w_day, bottom_line)
+                top_hour = top - (h_year_month + h_wday_day + h_memo)
+                h_hour = top_hour - (top - h_day) # h_hour = top_hour - bottom
+                hours = hour_end - hour_start
+                one_hour = h_hour / hours
+                c.setDash([3, 2]) # [on, off]
+                c.setLineWidth(0.8)
+                for j in range(1, hours + 1):
+                    c.line(left, top_hour - one_hour * j, left + w_day, top_hour - one_hour * j)
         c.showPage()
     c.save()
     return calendar_path
@@ -243,7 +270,7 @@ if __name__ == '__main__':
     font_path = 'c:/Windows/Fonts/BRUSHSCI.TTF'
     font_path = 'c:/Windows/Fonts/UDDigiKyokashoN-R.ttc'
 
-    year            = 2025
+    year            = 2026
     hour_start      = 6
     hour_end        = 22
     starts_with_mon = True
