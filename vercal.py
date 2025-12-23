@@ -1,6 +1,6 @@
 import os
 import calendar
-from datetime import datetime, timedelta
+from datetime import datetime
 import pandas as pd
 
 from reportlab.pdfbase import pdfmetrics
@@ -9,8 +9,9 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A5
 from reportlab.lib.units import mm
 
-def create_year_df(year,
-    start_april=True, starts_with_mon=True, adjust_left=True):
+# --- データ作成系関数 ---
+def create_year_df(year, 
+                   start_april=True, starts_with_mon=True, adjust_left=True):
     df_year = create_year(year, start_april=start_april)
     df_year = add_position(df_year, starts_with_mon=starts_with_mon, adjust_left=adjust_left)
     df_year = add_page(df_year)
@@ -18,30 +19,20 @@ def create_year_df(year,
     return df_year
 
 def create_year(year, start_april=True):
-    # start with January
     if not start_april:
         return generate_dates(year)
-    # start with April
     cal_this_yr = generate_dates(year).query('month > 3')
     cal_next_yr = generate_dates(year + 1).query('month < 4')
-    calendar = pd.concat([cal_this_yr, cal_next_yr])
-    return calendar
+    return pd.concat([cal_this_yr, cal_next_yr])
 
 def generate_dates(year):
-    """
-    Generates a Pandas DataFrame with year, month, day, and weekday.
-    Examples
-        year_to_generate = 2025
-        date_df = generate_dates(year_to_generate)
-    """
     data = []
     for month in range(1, 13):
         for day in range(1, calendar.monthrange(year, month)[1] + 1):
             weekday_num = calendar.weekday(year, month, day)
             weekday_abbr = calendar.day_abbr[weekday_num].lower()
             data.append([year, month, day, weekday_abbr])
-    df = pd.DataFrame(data, columns=['year', 'month', 'day', 'weekday'])
-    return df
+    return pd.DataFrame(data, columns=['year', 'month', 'day', 'weekday'])
 
 def add_page(df, base_col='position', page_col='page'):
     df[page_col] = 1
@@ -51,21 +42,9 @@ def add_page(df, base_col='position', page_col='page'):
     return df
 
 def add_position(df, starts_with_mon=True, adjust_left=True):
-    if starts_with_mon:
-        if adjust_left:
-            data = {'weekday': ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], 
-                    'position': [0, 1, 2, 3, 0, 1, 2]}
-        else:
-            data = {'weekday': ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], 
-                    'position': [1, 2, 3, 0, 1, 2, 3]}
-    else:
-        if adjust_left:
-            data = {'weekday': ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'], 
-                    'position': [0, 1, 2, 3, 0, 1, 2]}
-        else:
-            data = {'weekday': ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'], 
-                    'position': [1, 2, 3, 0, 1, 2, 3]}
-    wday = pd.DataFrame(data)
+    wday_order = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] if starts_with_mon else ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+    pos_map = [0, 1, 2, 3, 0, 1, 2] if adjust_left else [1, 2, 3, 0, 1, 2, 3]
+    wday = pd.DataFrame({'weekday': wday_order, 'position': pos_map})
     return df.merge(wday, how='left')
 
 def add_draw_year_month(df):
@@ -76,87 +55,22 @@ def add_draw_year_month(df):
             df.loc[i, 'draw_year_month'] = True
     return df
 
-def create_day(c, 
-               left, top, width, height, 
-               font_name, font_size,
-               year, month, day, wday,
-               hour_start=6, hour_end=24, 
-               h_year_month=5*mm, h_wday_day=5*mm, h_memo=15*mm,
-               draw_year_month=True,
-               df_event=pd.DataFrame(),
-               draw_day_box=False):
-    """Creates a daily schedule block."""
-    offset = 1 * mm
-    leftt = left + offset
-    right = left + width - offset
-    bottom = top - height
-    c.setFont(font_name, font_size)
-    font_size_hour = font_size * 0.7
-    top_hour = top - (h_year_month + h_wday_day + h_memo)
-    h_hour = top_hour - bottom
-    date_section(c, left,        top,      year, month, day, wday, h_year_month, h_wday_day, draw_year_month)
-    memo_section(c, left, right, top,                              h_year_month, h_wday_day, h_memo)
-    ten_minute  (c, left, right, top_hour, h_hour, hour_start, hour_end)
-    hour_section(c, left, right, top_hour, h_hour, hour_start, hour_end, font_size_hour)
-    date_today = datetime.strptime(f'{year}-{month}-{day}', '%Y-%m-%d').strftime('%Y-%m-%d')
-    print(f'drawing {date_today}')
-    events = df_event['event'][df_event['date'] == date_today]
-    if not len(events) == 0:
-        for event in events.iloc[0]:
-            schedule    = event['event']
-            event_start = event['event_start']
-            event_end   = event['event_end']
-            draw_schedule(c, schedule, event_start, event_end, 
-                hour_start, hour_end, 
-                top_hour, left, 
-                width, h_hour, 
-                font_size_hour)
-    # day_box関数の呼び出しを削除
-    # if draw_day_box:
-    #     day_box(c, left, top, width, height)
-
-def draw_schedule(c, schedule, event_start, event_end, hour_start, hour_end, top_hour, left, width, h_hour, font_size_hour):
-    hours = hour_end - hour_start
-    one_hour = h_hour / hours
-    x = left
-    y = top_hour - (string2float(event_start) - hour_start) * one_hour
-    duration = - (string2float(event_end) - string2float(event_start)) * one_hour
-    c.setDash([1, 0]) # [on, off]
-    c.setLineWidth(0.3)
-    c.rect(x + width * 0.12, y, width * 0.83, duration)
-    c.setFont(c._fontname, font_size_hour)
-    c.drawString(x + width * 0.13, y - font_size_hour, schedule)
-
-def hour_section(c, left, right, top_hour, h_hour, hour_start, hour_end, font_size_hour):
-    """Draws hour lines and times."""
-    c.setDash([3, 2]) # [on, off]
-    c.setLineWidth(0.8)
-    c.setFont(c._fontname, font_size_hour)
-    hours = hour_end - hour_start
-    one_hour = h_hour / hours
-    for i in range(hours):
-        c.drawString(left, top_hour - one_hour * i - font_size_hour, str(hour_start + i).zfill(2))
-    for i in range(1, hours + 1):
-        c.line(left, top_hour - one_hour * i, right, top_hour - one_hour * i)
-
+# --- 描画系補助関数 ---
 def string2float(time_str):
-    """convert time string into time float """
     hours, minutes = map(int, time_str.split(':'))
     return hours + minutes / 60.0
 
 def use_font(font_path):
-    file_name = os.path.basename(font_path)
-    font_name, _ = os.path.splitext(file_name)
-    return font_name
+    return os.path.splitext(os.path.basename(font_path))[0]
 
-def date_section(c, left, top, year, month, day, wday, h_year_month, h_wday_day, draw_year_month=True):
-    """Draws date information (year-month, day day of the week)."""
+# --- セクション描画関数 ---
+def date_section(c, left, top, year, month, day, wday, 
+                 h_year_month, h_wday_day, draw_year_month=True):
     if draw_year_month:
         c.drawString(left, top - c._fontsize, f'{year}-{month.zfill(2)}')
     c.drawString(left, top - h_wday_day - c._fontsize, f'{day.zfill(2)} {wday}')
 
 def memo_section(c, left, right, top, h_year_month, h_wday_day, h_memo, circle_no=3):
-    """Draws memo section (separator line and circles)."""
     circle_distance = h_memo / circle_no
     top_memo = top - (h_year_month + h_wday_day) - circle_distance * 0.5 
     c.setDash([1, 0])
@@ -169,100 +83,133 @@ def memo_section(c, left, right, top, h_year_month, h_wday_day, h_memo, circle_n
         c.circle(left + circle_distance * 0.5, top_memo - circle_distance * i, circle_distance / 3)
 
 def ten_minute(c, left, right, top, h_hour, hour_start, hour_end):
-    """Draws circles every 10 minutes."""
     hours = hour_end - hour_start
     one_hour = h_hour / hours
     ten_minutes = one_hour / 6
     x = left - (left - right) * 0.12
     c.setDash([1, 0])
-    c.setLineWidth(0.8)
+    c.setLineWidth(1)
+    c.setStrokeColorRGB(0, 0.7, 0.3)
     for i in range((hours) * 6):
         y = top - ten_minutes * i
-        circle_size = ((i % 2) + 1) * 0.5 # even: large, odd: small
+        circle_size = ((i % 2) + 1) * 0.5
         c.circle(x, y, circle_size)
+    c.setStrokeColorRGB(0, 0, 0)
 
-# def day_box(c, left, top, width, height): # 削除された関数
-#     """Draws a frame for debug."""
-#     c.setLineWidth(1)
-#     c.setDash([1, 0]) # [on, off]
-#     c.line(left, top, left + width, top)
-#     c.line(left, top - height, left + width, top - height)
-#     c.line(left, top, left, top - height)
-#     c.line(left + width, top, left + width, top - height)
+def hour_section(c, left, right, top_hour, h_hour, 
+                 hour_start, hour_end, font_size_hour, draw_numbers=True):
+    c.setDash([3, 2])
+    c.setLineWidth(0.5)
+    hours = hour_end - hour_start
+    one_hour = h_hour / hours
+    if draw_numbers:
+        c.setFont(c._fontname, font_size_hour)
+        for i in range(hours):
+            c.drawString(left, top_hour - one_hour * i - font_size_hour, str(hour_start + i).zfill(2))
+    for i in range(1, hours + 1):
+        c.line(left, top_hour - one_hour * i, right, top_hour - one_hour * i)
 
-def calendar_weekly_vertical(year, month=range(12),
-    start_april=True, starts_with_mon=True, adjust_left=True,
-    calendar_path=None,
-    pagesize=A5, margin=5*mm,
-    font_path=None, font_size=12,
-    hour_start=6, hour_end=24,
-    df_event = pd.DataFrame(),
-    draw_day_box=False): # draw_day_boxは使用されなくなりますが、互換性のために残します
-    # # # # settings # # # #
-    # output path
+def draw_schedule(c, schedule, event_start, event_end, 
+                  hour_start, hour_end, top_hour, 
+                  left, width, h_hour, font_size_hour):
+    hours = hour_end - hour_start
+    one_hour = h_hour / hours
+    x = left
+    y = top_hour - (string2float(event_start) - hour_start) * one_hour
+    duration = - (string2float(event_end) - string2float(event_start)) * one_hour
+    c.setDash([1, 0])
+    c.setLineWidth(0.5)
+    c.rect(x + width * 0.12, y, width * 0.83, duration)
+    c.setFont(c._fontname, font_size_hour)
+    c.drawString(x + width * 0.13, y - font_size_hour, schedule)
+
+# --- ブロック描画の統合 ---
+def draw_common_skeleton(c, left, right, top, height, 
+                         hour_start, hour_end, h_year_month, h_wday_day, h_memo):
+    """日付あり・なし共通の骨組み（メモ欄の線と時間線）を描画"""
+    top_hour = top - (h_year_month + h_wday_day + h_memo)
+    h_hour = top_hour - (top - height)
+    # メモセクションの描画（共通）
+    memo_section(c, left, right, top, h_year_month, h_wday_day, h_memo)
+    return top_hour, h_hour
+
+def create_day(c, left, top, width, height, 
+               font_name, font_size, year, month, day, wday, 
+               hour_start=6, hour_end=24, h_year_month=5*mm, h_wday_day=5*mm, h_memo=15*mm,
+               draw_year_month=True, df_event=pd.DataFrame()):
+    """通常の日付ブロック（日付・10分丸・時間数字あり）"""
+    offset = 1 * mm
+    right = left + width - offset
+    c.setFont(font_name, font_size)
+    font_size_hour = font_size * 0.7
+    # 共通の骨組み
+    top_hour, h_hour = draw_common_skeleton(c, left, right, top, height, hour_start, hour_end, h_year_month, h_wday_day, h_memo)
+    # 日付あり特有：10分間隔の丸を描画
+    ten_minute(c, left, right, top_hour, h_hour, hour_start, hour_end)
+    # 日付セクションと時間数字の描画
+    date_section(c, left, top, year, month, day, wday, h_year_month, h_wday_day, draw_year_month)
+    hour_section(c, left, right, top_hour, h_hour, hour_start, hour_end, font_size_hour, draw_numbers=True)
+    # イベントの描画
+    date_today = f"{int(year)}-{int(month):02d}-{int(day):02d}"
+    events = df_event[df_event['date'] == date_today]
+    if not events.empty:
+        for _, event_row in events.iterrows():
+            if isinstance(event_row['event'], list):
+                for event in event_row['event']:
+                    draw_schedule(c, event['event'], event['event_start'], event['event_end'], 
+                                  hour_start, hour_end, top_hour, left, width, h_hour, font_size_hour)
+
+def draw_empty_block(c, left, top, width, height, 
+                     hour_start, hour_end, h_year_month=5*mm, h_wday_day=5*mm, h_memo=15*mm):
+    """日付のない空ブロック（メモ欄の線と時間線のみ）"""
+    offset = 1 * mm
+    right = left + width - offset
+    # 共通の骨組み
+    top_hour, h_hour = draw_common_skeleton(c, left, right, top, height, hour_start, hour_end, h_year_month, h_wday_day, h_memo)
+    # 10分丸は描かず、時間線のみ描画（数字なし）
+    hour_section(c, left, right, top_hour, h_hour, hour_start, hour_end, font_size_hour=0, draw_numbers=False)
+
+# --- メイン関数 ---
+def calendar_weekly_vertical(year, month=range(12), start_april=True, starts_with_mon=True, adjust_left=True,
+                             calendar_path=None, pagesize=A5, margin=5*mm, font_path=None, font_size=12,
+                             hour_start=6, hour_end=24, df_event=pd.DataFrame(), draw_day_box=False):
     if not calendar_path:
         calendar_path = f'{year}_calendar.pdf'
     df_year = create_year_df(year, start_april=start_april, starts_with_mon=starts_with_mon, adjust_left=adjust_left)
-    # page size
     c = canvas.Canvas(calendar_path, pagesize=pagesize)
     width, height = pagesize
     w_day = (width - 2 * margin) / 4
     h_day = height - 2 * margin
-    # font
     if font_path is None:
         font_path = 'c:/Windows/Fonts/CENTURY.ttf'
     font_name = use_font(font_path)
     pdfmetrics.registerFont(TTFont(font_name, font_path))
-    # # # # create pages # # # #
     pages = df_year['page'].unique()
     for p in pages:
         df_page = df_year[df_year['page'] == p]
+        # 1. 予定がある日の描画
         for i in range(len(df_page)):
-            year, month, day, weekday, position, page, draw_year_month = df_page.iloc[i]
-            left = margin + w_day * position
-            top  = margin + h_day
-            create_day(c,
-                       left, top, w_day, h_day,
-                       font_name, font_size,
-                       year=str(year), month=str(month), day=str(day), wday=weekday,
-                       hour_start=hour_start, hour_end=hour_end,
-                       h_year_month=5*mm, h_wday_day=5*mm, h_memo=15*mm,
-                       draw_year_month=draw_year_month,
-                       df_event=df_event,
-                       draw_day_box=False) # 常にFalseを設定するか、引数を削除します。ここではFalseに固定
-        num_days_on_page = len(df_page)
-        days_per_page = 4 # 1ページあたりのブロック数
-        if num_days_on_page % days_per_page != 0:
-            start_position = num_days_on_page % days_per_page
-            num_empty_blocks = days_per_page - start_position
-            for i in range(num_empty_blocks):
-                position = start_position + i
-                left = margin + w_day * position
-                top  = margin + h_day
-                # day_box(c, left, top, w_day, h_day) # 全体枠線の呼び出しを削除
-                h_year_month=5*mm
-                h_wday_day=5*mm
-                h_memo=15*mm
-                top_line = top - (h_year_month + h_wday_day)
-                bottom_line = top - (h_year_month + h_wday_day + h_memo)
-                c.setDash([1, 0])
-                c.setLineWidth(0.8)
-                c.line(left, top_line, left + w_day, top_line)
-                c.line(left, bottom_line, left + w_day, bottom_line)
-                top_hour = top - (h_year_month + h_wday_day + h_memo)
-                h_hour = top_hour - (top - h_day) # h_hour = top_hour - bottom
-                hours = hour_end - hour_start
-                one_hour = h_hour / hours
-                c.setDash([3, 2]) # [on, off]
-                c.setLineWidth(0.8)
-                for j in range(1, hours + 1):
-                    c.line(left, top_hour - one_hour * j, left + w_day, top_hour - one_hour * j)
+            row = df_page.iloc[i]
+            left = margin + w_day * row['position']
+            top = margin + h_day
+            create_day(c, left, top, w_day, h_day, font_name, font_size,
+                       year=str(row['year']), month=str(row['month']), day=str(row['day']), wday=row['weekday'],
+                       hour_start=hour_start, hour_end=hour_end, draw_year_month=row['draw_year_month'],
+                       df_event=df_event)
+        # 2. 右端の空きブロック（メモ欄）の描画
+        days_per_page = 4
+        existing_positions = df_page['position'].tolist()
+        for pos in range(days_per_page):
+            if pos not in existing_positions:
+                left = margin + w_day * pos
+                top = margin + h_day
+                draw_empty_block(c, left, top, w_day, h_day, hour_start, hour_end)
+                
         c.showPage()
     c.save()
     return calendar_path
 
 if __name__ == '__main__':
-
     font_path = './HackGen35Console-Regular.ttf' # not work in font directory
     font_path = 'c:/Windows/Fonts/CENTURY.ttf'
     font_path = 'c:/Windows/Fonts/ALGER.TTF'
