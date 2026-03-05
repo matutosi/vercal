@@ -36,15 +36,17 @@ with settings:
     current_year = now.year
     current_month = now.month
 
+    start_april          = st.checkbox('Starts with April', value=True)
     # For April-start calendar (default): Jan-Mar uses current year, Apr-Dec uses next year
     # For January-start calendar: always uses next year
-    if current_month <= 3:
-        default_year = current_year
+    if start_april == True:
+        if current_month <= 3:
+            default_year = current_year
+        else:
+            default_year = current_year + 1
     else:
         default_year = current_year + 1
-
     year                 = st.number_input('Year:', value=default_year, step=1)
-    start_april          = st.checkbox('Starts with April', value=True)
     hour_start, hour_end = st.slider("Range in a day", min_value=0, max_value=24, value=(6, 24), step=1)
     starts_with_mon      = st.checkbox('Starts with Monday', value=True)
     adjust_left          = st.checkbox('Adjust left'       , value=True)
