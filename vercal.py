@@ -153,6 +153,19 @@ def draw_schedule(c, schedule, event_start, event_end,
     for i, line in enumerate(lines):
         c.drawString(x + width * 0.13, y - font_size_hour * (i + 1), line)
 
+def draw_all_day_event(c, schedule, left, right, top, h_year_month, h_wday_day, h_memo,
+                       font_size_hour, line_no=0, circle_no=3):
+    """時刻のない終日の予定を，メモ欄に描く"""
+    circle_distance = h_memo / circle_no
+    x = left + circle_distance * 1.1
+    top_memo = top - (h_year_month + h_wday_day)
+    c.setFont(c._fontname, font_size_hour)
+    max_lines = max(1, circle_no - line_no)
+    lines = wrap_text(schedule, c._fontname, font_size_hour, right - x, max_lines)
+    for i, line in enumerate(lines):
+        c.drawString(x, top_memo - circle_distance * (line_no + i) - font_size_hour, line)
+    return line_no + len(lines)
+
 # --- ブロック描画の統合 ---
 def draw_common_skeleton(c, left, right, top, height, 
                          hour_start, hour_end, h_year_month, h_wday_day, h_memo):
@@ -185,9 +198,16 @@ def create_day(c, left, top, width, height,
     if not events.empty:
         for _, event_row in events.iterrows():
             if isinstance(event_row['event'], list):
+                line_no = 0
                 for event in event_row['event']:
-                    draw_schedule(c, event['event'], event['event_start'], event['event_end'],
-                                  hour_start, hour_end, top_hour, left, width, h_hour, font_size_hour)
+                    if event['event_start'] is None:
+                        # 時刻のない予定はメモ欄へ
+                        line_no = draw_all_day_event(c, event['event'], left, right, top,
+                                                     h_year_month, h_wday_day, h_memo,
+                                                     font_size_hour, line_no)
+                    else:
+                        draw_schedule(c, event['event'], event['event_start'], event['event_end'],
+                                      hour_start, hour_end, top_hour, left, width, h_hour, font_size_hour)
 
 def draw_empty_block(c, left, top, width, height, 
                      hour_start, hour_end, h_year_month=5*mm, h_wday_day=5*mm, h_memo=15*mm):

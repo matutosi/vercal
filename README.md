@@ -42,11 +42,14 @@ Forma of Excel file
 | ------------ | ---------- |  ---------- |  ---------- |  -------- |  ------------- |  --------------------- | 
 | 2025-04-10   | 2025-07-10 | wed         | 10:30       |     12:00 | math           | 2025-05-07;2025-05-14  |
 | 2025-04-10   | 2025-07-10 | mon         | 12:30       |     12:30 | only start     |                        |
+| 2025-04-01   | 2025-04-01 |             |             |           | entrance ceremony |                     |
 
 - period_start: start date of an event  
 - period_end  : end date of an event  
 - week_of_day : week of day of an event   
+  Leave it empty for a single day event; the event is placed on `period_start` only  
 - event_start : start time of an event  
+  No start time, the event is drawn as an all day event in the memo area  
 - event_end   : end time of an event  
   No ending time, set the same as event_start  
 - event       : event name  
@@ -56,7 +59,9 @@ Forma of Excel file
 - period_start: 予定の開始年月日
 - period_end  : 予定の終了年月日
 - week_of_day : 予定の曜日  
+  空にすると単発の予定として扱い，period_start の1日だけに置く  
 - event_start : 予定の開始時刻  
+  開始時刻がない場合は終日の予定として，メモ欄に書く  
 - event_end   : 予定の終了時刻  
   終了時刻がない場合は，event_startと同じ時刻を入力  
 - event       : 予定の内容  

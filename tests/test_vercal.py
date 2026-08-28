@@ -145,3 +145,15 @@ class TestWrapText:
     def test_empty_text(self):
         assert vercal.wrap_text('', self.FONT, 8, 100) == ['']
 
+
+class TestAllDayEvent:
+    def test_creates_pdf_from_the_bundled_template(self, tmp_path):
+        import event
+        here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        df_input = pd.read_excel(os.path.join(here, 'schedule.xlsx'))
+        df_event = event.format_events(event.generate_schedule(df_input))
+        path = str(tmp_path / 'calendar_template.pdf')
+        vercal.calendar_weekly_vertical(
+            2025, calendar_path=path, font_path=os.path.join(here, 'HackGen35Console-Regular.ttf'),
+            hour_start=6, hour_end=22, df_event=df_event)
+        assert os.path.getsize(path) > 0

@@ -103,3 +103,35 @@ class TestFormatEvents:
                        ignore_index=True)
         grouped = event.format_events(event.generate_schedule(df))
         assert len(grouped['event'].iloc[0]) == 2
+
+
+class TestSingleDayEvent:
+    def test_empty_week_of_day_is_a_single_day(self):
+        # 曜日が空の行は開始日の1日だけ (period_end は見ない)
+        df = event.generate_schedule(make_row(week_of_day=np.nan, period_start='2025-04-10',
+                                              period_end='2025-07-10'))
+        assert df['date'].tolist() == ['2025-04-10']
+
+    def test_empty_week_of_day_with_date_cell(self):
+        df = event.generate_schedule(make_row(week_of_day=np.nan,
+                                              period_start=pd.Timestamp('2025-04-10'),
+                                              period_end=pd.Timestamp('2025-04-10')))
+        assert df['date'].tolist() == ['2025-04-10']
+
+    def test_no_event_start_is_an_all_day_event(self):
+        # 時刻のない予定は終日の予定 (メモ欄に描かれる)
+        grouped = event.format_events(
+            event.generate_schedule(make_row(week_of_day=np.nan, event_start=np.nan,
+                                             event_end=np.nan, event='入学式',
+                                             period_start='2025-04-01', period_end='2025-04-01')))
+        assert grouped['event'].iloc[0] == [{'event_start': None, 'event_end': None, 'event': '入学式'}]
+
+
+class TestBundledTemplate:
+    def test_shipped_schedule_xlsx_can_be_read(self):
+        # 同梱の雛形をそのまま読めること (単発の予定の行を含む)
+        here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        df_input = pd.read_excel(os.path.join(here, 'schedule.xlsx'))
+        grouped = event.format_events(event.generate_schedule(df_input))
+        assert len(grouped) > 0
+        assert '2025-04-01' in grouped['date'].tolist()
