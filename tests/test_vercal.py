@@ -60,6 +60,12 @@ class TestAddPage:
         assert df['page'].tolist() == [1, 1, 1, 2, 2, 2, 3]
 
 
+    def test_works_with_a_non_range_index(self):
+        # concat の後など，添字が 0 から並んでいなくても同じ結果になる
+        df = pd.DataFrame({'position': [1, 2, 3, 0, 1]}, index=[10, 11, 12, 13, 14])
+        assert vercal.add_page(df)['page'].tolist() == [1, 1, 1, 2, 2]
+
+
 class TestAddDrawYearMonth:
     def test_first_day_of_month_and_first_of_page(self):
         df = pd.DataFrame({'day': [30, 1, 2, 3], 'position': [0, 1, 2, 0]})

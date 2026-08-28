@@ -47,10 +47,9 @@ def generate_dates(year):
     return pd.DataFrame(data, columns=['year', 'month', 'day', 'weekday'])
 
 def add_page(df, base_col='position', page_col='page'):
-    df[page_col] = 1
-    for i in range(1, len(df)):
-        if df[base_col].iloc[i] < df[base_col].iloc[i - 1]:
-            df.loc[i:, page_col] += 1
+    # 位置が前の行より戻ったところが次のページの先頭
+    new_page = df[base_col] < df[base_col].shift()
+    df[page_col] = new_page.cumsum() + 1
     return df
 
 def add_position(df, starts_with_mon=True, adjust_left=True):
@@ -60,11 +59,10 @@ def add_position(df, starts_with_mon=True, adjust_left=True):
     return df.merge(wday, how='left')
 
 def add_draw_year_month(df):
-    df['draw_year_month'] = False
-    df.loc[df['day'] == 1, 'draw_year_month'] = True
-    for i in range(1, len(df)):
-        if df['position'].iloc[i] < df['position'].iloc[i - 1]:
-            df.loc[i, 'draw_year_month'] = True
+    # 月の初日と，各ページの先頭に年月を書く
+    first_of_month = df['day'] == 1
+    first_of_page = df['position'] < df['position'].shift()
+    df['draw_year_month'] = first_of_month | first_of_page
     return df
 
 # --- 描画系補助関数 ---
