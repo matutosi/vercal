@@ -120,6 +120,22 @@ path_calendar = calendar_weekly_vertical(year,
 ```
 
 
+## License ライセンス
+
+This repository is licensed under the MIT License (see `LICENSE.md`).  
+このリポジトリのコードは MIT License です (`LICENSE.md` を参照)．
+
+The bundled font `HackGen35Console-Regular.ttf` (白源/HackGen) is **not** covered by the MIT License.  
+同梱しているフォント `HackGen35Console-Regular.ttf` (白源/HackGen) は MIT License の対象外です．
+
+- Font: 白源 (HackGen) <https://github.com/yuru7/HackGen>
+- Copyright (c) 2019, Yuko OTAWARA. with Reserved Font Name "白源", "HackGen"
+- License: SIL Open Font License, Version 1.1 (see `LICENSE_HackGen.txt`)  
+  ライセンス: SIL Open Font License Version 1.1 (全文は `LICENSE_HackGen.txt`)
+
+The font is redistributed unmodified. When you redistribute this repository, keep `LICENSE_HackGen.txt` together with the font file.  
+フォントは無改変で再配布している．このリポジトリを再配布するときは，フォントと `LICENSE_HackGen.txt` を必ず一緒にする．
+
 ## Citation 引用
 
 松村 俊和 (2025) varcal: 縦型週間カレンダー作成ツール．<https://github.com/matutosi/vercal> .
