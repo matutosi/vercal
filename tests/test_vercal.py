@@ -157,3 +157,21 @@ class TestAllDayEvent:
             2025, calendar_path=path, font_path=os.path.join(here, 'HackGen35Console-Regular.ttf'),
             hour_start=6, hour_end=22, df_event=df_event)
         assert os.path.getsize(path) > 0
+
+
+class TestCli:
+    def test_creates_pdf_without_schedule(self, tmp_path):
+        path = str(tmp_path / 'cli.pdf')
+        out = vercal.main(['--year', '2025', '--out', path, '--hour-end', '22'])
+        assert out == path
+        assert os.path.getsize(path) > 0
+
+    def test_creates_pdf_with_schedule(self, tmp_path):
+        here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        path = str(tmp_path / 'cli_schedule.pdf')
+        vercal.main(['--year', '2025', '--out', path,
+                     '--schedule', os.path.join(here, 'schedule.xlsx')])
+        assert os.path.getsize(path) > 0
+
+    def test_default_font_is_bundled(self):
+        assert os.path.exists(vercal.DEFAULT_FONT_PATH)

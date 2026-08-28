@@ -1,3 +1,4 @@
+import argparse
 import os
 import calendar
 from datetime import datetime
@@ -8,6 +9,17 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A5
 from reportlab.lib.units import mm
+
+# 同梱のフォント (このファイルと同じディレクトリに置く)
+DEFAULT_FONT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'HackGen35Console-Regular.ttf')
+
+# 描画の比率 (1日の欄の幅に対する割合)
+TEN_MINUTE_X_RATIO = 0.12      # 10分丸の x 位置
+EVENT_BOX_LEFT_RATIO = 0.12    # 予定の枠の左端
+EVENT_BOX_WIDTH_RATIO = 0.83   # 予定の枠の幅
+EVENT_TEXT_LEFT_RATIO = 0.13   # 予定名の左端
+EVENT_TEXT_WIDTH_RATIO = 0.80  # 予定名の折り返し幅
+ALL_DAY_TEXT_LEFT_RATIO = 1.1  # 終日の予定の左端 (メモ欄の丸の間隔に対する割合)
 
 # --- データ作成系関数 ---
 def create_year_df(year, 
@@ -112,7 +124,7 @@ def ten_minute(c, left, right, top, h_hour, hour_start, hour_end):
     hours = hour_end - hour_start
     one_hour = h_hour / hours
     ten_minutes = one_hour / 6
-    x = left - (left - right) * 0.12
+    x = left - (left - right) * TEN_MINUTE_X_RATIO
     c.setDash([1, 0])
     c.setLineWidth(1)
     c.setStrokeColorRGB(0, 0.7, 0.3)
@@ -145,19 +157,19 @@ def draw_schedule(c, schedule, event_start, event_end,
     duration = - (string2float(event_end) - string2float(event_start)) * one_hour
     c.setDash([1, 0])
     c.setLineWidth(0.5)
-    c.rect(x + width * 0.12, y, width * 0.83, duration)
+    c.rect(x + width * EVENT_BOX_LEFT_RATIO, y, width * EVENT_BOX_WIDTH_RATIO, duration)
     c.setFont(c._fontname, font_size_hour)
     # 枠からはみ出さないように折り返す (枠の高さに収まる行数まで)
     max_lines = max(1, int(abs(duration) // font_size_hour))
-    lines = wrap_text(schedule, c._fontname, font_size_hour, width * 0.80, max_lines)
+    lines = wrap_text(schedule, c._fontname, font_size_hour, width * EVENT_TEXT_WIDTH_RATIO, max_lines)
     for i, line in enumerate(lines):
-        c.drawString(x + width * 0.13, y - font_size_hour * (i + 1), line)
+        c.drawString(x + width * EVENT_TEXT_LEFT_RATIO, y - font_size_hour * (i + 1), line)
 
 def draw_all_day_event(c, schedule, left, right, top, h_year_month, h_wday_day, h_memo,
                        font_size_hour, line_no=0, circle_no=3):
     """時刻のない終日の予定を，メモ欄に描く"""
     circle_distance = h_memo / circle_no
-    x = left + circle_distance * 1.1
+    x = left + circle_distance * ALL_DAY_TEXT_LEFT_RATIO
     top_memo = top - (h_year_month + h_wday_day)
     c.setFont(c._fontname, font_size_hour)
     max_lines = max(1, circle_no - line_no)
@@ -220,14 +232,14 @@ def draw_empty_block(c, left, top, width, height,
     hour_section(c, left, right, top_hour, h_hour, hour_start, hour_end, font_size_hour=0, draw_numbers=False)
 
 # --- メイン関数 ---
-def calendar_weekly_vertical(year, month=range(12), start_april=True, starts_with_mon=True, adjust_left=True,
+def calendar_weekly_vertical(year, start_april=True, starts_with_mon=True, adjust_left=True,
                              calendar_path=None, pagesize=A5, margin=5*mm, font_path=None, font_size=12,
-                             hour_start=6, hour_end=24, df_event=pd.DataFrame(), draw_day_box=False):
+                             hour_start=6, hour_end=24, df_event=None):
     if not calendar_path:
         calendar_path = f'{year}_calendar.pdf'
     if hour_end <= hour_start:
         raise ValueError(f'hour_end ({hour_end}) は hour_start ({hour_start}) より大きくする')
-    if df_event.empty:
+    if df_event is None or df_event.empty:
         # 予定がないときも 'date' 列を持たせる (create_day が参照するため)
         df_event = pd.DataFrame(columns=['date', 'event'])
     df_year = create_year_df(year, start_april=start_april, starts_with_mon=starts_with_mon, adjust_left=adjust_left)
@@ -236,7 +248,7 @@ def calendar_weekly_vertical(year, month=range(12), start_april=True, starts_wit
     w_day = (width - 2 * margin) / 4
     h_day = height - 2 * margin
     if font_path is None:
-        font_path = 'c:/Windows/Fonts/CENTURY.ttf'
+        font_path = DEFAULT_FONT_PATH
     font_name = use_font(font_path)
     pdfmetrics.registerFont(TTFont(font_name, font_path))
     pages = df_year['page'].unique()
@@ -264,33 +276,39 @@ def calendar_weekly_vertical(year, month=range(12), start_april=True, starts_wit
     c.save()
     return calendar_path
 
-if __name__ == '__main__':
-    font_path = './HackGen35Console-Regular.ttf' # not work in font directory
-    font_path = 'c:/Windows/Fonts/CENTURY.ttf'
-    font_path = 'c:/Windows/Fonts/ALGER.TTF'
-    font_path = 'c:/Windows/Fonts/ITCBLKAD.TTF'
-    font_path = 'c:/Windows/Fonts/BRUSHSCI.TTF'
-    font_path = 'c:/Windows/Fonts/UDDigiKyokashoN-R.ttc'
+def main(argv=None):
+    parser = argparse.ArgumentParser(description='週間の縦型カレンダーの PDF を作る')
+    parser.add_argument('--year', type=int, default=datetime.now().year, help='年 (既定: 今年)')
+    parser.add_argument('--schedule', default=None, help='繰り返しの予定のエクセル (省略すると予定なし)')
+    parser.add_argument('--font', default=DEFAULT_FONT_PATH, help='フォントのパス')
+    parser.add_argument('--hour-start', type=int, default=6, help='1日の開始時刻')
+    parser.add_argument('--hour-end', type=int, default=22, help='1日の終了時刻')
+    parser.add_argument('--out', default=None, help='出力する PDF のパス')
+    parser.add_argument('--january-start', action='store_true', help='1月始まりにする (既定は4月始まり)')
+    parser.add_argument('--starts-with-sun', action='store_true', help='日曜始まりにする (既定は月曜始まり)')
+    parser.add_argument('--adjust-right', action='store_true', help='右寄せにする (既定は左寄せ)')
+    parser.add_argument('--open', action='store_true', help='できた PDF を開く (Windows のみ)')
+    args = parser.parse_args(argv)
 
-    year            = 2026
-    hour_start      = 6
-    hour_end        = 22
-    starts_with_mon = True
-    adjust_left     = True
+    df_event = None
+    if args.schedule:
+        import event
+        df_event = event.format_events(event.generate_schedule(pd.read_excel(args.schedule)))
 
-    # event data
-    import event
-    path = 'schedule.xlsx'
-    df_input = pd.read_excel(path)
-    df_date = event.generate_schedule(df_input)
-    df_event = event.format_events(df_date)
-
-    path_calendar = calendar_weekly_vertical(year, 
-        font_path       = font_path, 
-        hour_start      = hour_start, 
-        hour_end        = hour_end,
-        starts_with_mon = starts_with_mon, 
-        adjust_left     = adjust_left, 
+    calendar_path = calendar_weekly_vertical(
+        args.year,
+        start_april     = not args.january_start,
+        starts_with_mon = not args.starts_with_sun,
+        adjust_left     = not args.adjust_right,
+        calendar_path   = args.out,
+        font_path       = args.font,
+        hour_start      = args.hour_start,
+        hour_end        = args.hour_end,
         df_event        = df_event)
+    print(calendar_path)
+    if args.open:
+        os.startfile(calendar_path)  # Windows のみ
+    return calendar_path
 
-    os.startfile(path_calendar)
+if __name__ == '__main__':
+    main()

@@ -96,6 +96,20 @@ Each day has three memo circles at the top, hour lines, and 10-minute dots. Even
 
 ## Run with Phthon on your PC Pythonでの実行
 
+### Command line コマンドライン
+
+```
+python vercal.py --year 2026 --schedule schedule.xlsx --out 2026_calendar.pdf
+```
+
+Options: `--font`, `--hour-start`, `--hour-end`, `--january-start`, `--starts-with-sun`, `--adjust-right`, `--open` (`--help` for all).  
+主な引数: `--font` (フォント)，`--hour-start`/`--hour-end` (1日の開始・終了時刻)，`--january-start` (1月始まり)，`--starts-with-sun` (日曜始まり)，`--adjust-right` (右寄せ)，`--open` (できた PDF を開く．Windows のみ)．`--help` で一覧が出る．
+
+The bundled font is used when `--font` is omitted.  
+`--font` を省くと，同梱のフォントを使う．
+
+### As a module モジュールとして
+
 ```{python}
 import os
 import calendar

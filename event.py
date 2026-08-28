@@ -105,22 +105,3 @@ def create_event_dict(row):
     # 終了時刻がないときは開始時刻と同じにする (線1本で描かれる)
     event_end = event_start if pd.isna(row['event_end']) else to_time_str(row['event_end'])
     return {'event_start': event_start, 'event_end': event_end, 'event': row['event']}
-
-if __name__ == '__main__':
-    # 使用例
-    # input_data = {
-    #     'period_start': ['2025-04-10', '2025-04-10'],
-    #     'period_end': ['2025-07-10', '2025-07-10'],
-    #     'week_of_day': ['wed', 'wed'],
-    #     'event_start': ['10:30', '12:30'],
-    #     'event_end': ['12:00', np.nan],
-    #     'event': ['math', 'english'],
-    #     'except': ['2025-05-05,2025-05-12', '2025-05-05,2025-05-12'],
-    # }
-    # input_df = pd.DataFrame(input_data)
-    # input_df.to_excel(path)
-
-    path = 'event.xlsx'
-    input_df = pd.read_excel(path)
-    date_df = generate_schedule(input_df)
-    event_df = format_events(date_df)
