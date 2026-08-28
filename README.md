@@ -79,6 +79,16 @@ Created PDF file is as below.
 <img src="img/vercal_pdf.png" width="80%"/>
 
 
+### Output example 出力例
+
+Below is a page of the generated PDF (A5, 4 days per page, Monday start, 6:00-22:00), created from the sample `schedule.xlsx`.  
+下は，同梱の `schedule.xlsx` から生成した PDF の1ページ (A5，1ページ4日，月曜始まり，6:00-22:00)．
+
+<img src="img/vercal_output_example.png" width="60%"/>
+
+Each day has three memo circles at the top, hour lines, and 10-minute dots. Events are drawn as boxes; an event without an end time is drawn as a single line.  
+1日ごとに，上部のメモ欄 (丸3つ)，時間線，10分ごとの点がある．予定は枠で描かれ，終了時刻のないものは線1本で描かれる．
+
 ## Run with Phthon on your PC Pythonでの実行
 
 ```{python}

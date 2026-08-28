@@ -26,11 +26,20 @@ Streamlit の web 版と，手元で実行する版がある．
 
 ### 現在の状態
 
+- 2026-08-28 11:15
+  **同梱フォントのライセンス表記を整えた** (`LICENSE_HackGen.txt` を追加，README に「License ライセンス」節)．
+  **README に実際の出力例を追加した** (`img/vercal_output_example.png`)．
+  出力例を作る過程で，未報告のバグを2件見つけた (下の「次にやること」)．
+
 - 2026-08-20 08:39
   プロジェクト管理用の `.claude/CLAUDE.md` を新規に設置した．
   実装の最終更新は 2026-03-06 で，年の既定値の算出と streamlit の最小版指定までが入っている．
 
 ### 次にやること
 
-- 実行例の gif か png を README に追加する (設定画面の図はあるが出力例が少ない)．
-- フォントを同梱しているので，配布時のライセンス表記を確認する．
+- ~~実行例の gif か png を README に追加する~~ **2026-08-28 完了** (`img/vercal_output_example.png`)．
+- ~~フォントを同梱しているので，配布時のライセンス表記を確認する~~ **2026-08-28 完了**．
+  白源 (HackGen) は **SIL OFL 1.1**，Reserved Font Name は「白源」「HackGen」．
+  無改変で再配布しているので，全文 (`LICENSE_HackGen.txt`) を同梱すれば足りる．
+  `.gitignore` の `*.ttf` に例外 (`!HackGen35Console-Regular.ttf`) を入れた
+  (追跡済みなので消えはしないが，取り違え防止)．
