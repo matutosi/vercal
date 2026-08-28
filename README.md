@@ -130,6 +130,16 @@ path_calendar = calendar_weekly_vertical(year,
 ```
 
 
+## Test テスト
+
+```
+pip install -r requirements.txt -r requirements-dev.txt
+pytest
+```
+
+`tests/` に `event.py` (予定の展開) と `vercal.py` (日付の割り付け・PDF 生成) のテストがある．  
+`tests/` holds tests for `event.py` (schedule expansion) and `vercal.py` (date layout and PDF creation).
+
 ## License ライセンス
 
 This repository is licensed under the MIT License (see `LICENSE.md`).  
