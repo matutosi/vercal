@@ -104,3 +104,44 @@ class TestCalendarWeeklyVertical:
             2025, calendar_path=path, font_path='./HackGen35Console-Regular.ttf',
             hour_start=6, hour_end=22, df_event=df_event)
         assert os.path.getsize(path) > 0
+
+
+class TestWrapText:
+    FONT = 'HackGen35Console-Regular'
+
+    @classmethod
+    def setup_class(cls):
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+        here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        pdfmetrics.registerFont(TTFont(cls.FONT, os.path.join(here, 'HackGen35Console-Regular.ttf')))
+
+    def width(self, text, size=8):
+        from reportlab.pdfbase import pdfmetrics
+        return pdfmetrics.stringWidth(text, self.FONT, size)
+
+    def test_short_text_is_one_line(self):
+        assert vercal.wrap_text('math', self.FONT, 8, self.width('mathmath')) == ['math']
+
+    def test_long_text_is_wrapped(self):
+        max_width = self.width('12345')
+        lines = vercal.wrap_text('from 15:00 to 17:00', self.FONT, 8, max_width)
+        assert len(lines) > 1
+        assert ''.join(lines) == 'from 15:00 to 17:00'
+        assert all(self.width(line) <= max_width for line in lines)
+
+    def test_japanese_is_wrapped_by_character(self):
+        max_width = self.width('あいう')
+        lines = vercal.wrap_text('あいうえおかきくけこ', self.FONT, 8, max_width)
+        assert ''.join(lines) == 'あいうえおかきくけこ'
+        assert all(self.width(line) <= max_width for line in lines)
+
+    def test_max_lines_truncates_with_ellipsis(self):
+        lines = vercal.wrap_text('from 15:00 to 17:00', self.FONT, 8, self.width('12345'), max_lines=1)
+        assert len(lines) == 1
+        assert lines[0].endswith('...')
+        assert self.width(lines[0]) <= self.width('12345')
+
+    def test_empty_text(self):
+        assert vercal.wrap_text('', self.FONT, 8, 100) == ['']
+

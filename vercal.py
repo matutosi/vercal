@@ -63,6 +63,32 @@ def string2float(time_str):
 def use_font(font_path):
     return os.path.splitext(os.path.basename(font_path))[0]
 
+def wrap_text(text, font_name, font_size, max_width, max_lines=None):
+    """
+    枠の幅に収まるように，1文字ずつ詰めて折り返す (和文は単語で切れないため)
+    max_lines を超える分は最終行を '...' で打ち切る
+    """
+    text = str(text)
+    lines = []
+    line = ''
+    for char in text:
+        if line and pdfmetrics.stringWidth(line + char, font_name, font_size) > max_width:
+            lines.append(line)
+            line = char
+        else:
+            line += char
+    if line:
+        lines.append(line)
+    if not lines:
+        return ['']
+    if max_lines is not None and len(lines) > max_lines:
+        lines = lines[:max_lines]
+        last = lines[-1]
+        while last and pdfmetrics.stringWidth(last + '...', font_name, font_size) > max_width:
+            last = last[:-1]
+        lines[-1] = last + '...'
+    return lines
+
 # --- セクション描画関数 ---
 def date_section(c, left, top, year, month, day, wday, 
                  h_year_month, h_wday_day, draw_year_month=True):
@@ -121,7 +147,11 @@ def draw_schedule(c, schedule, event_start, event_end,
     c.setLineWidth(0.5)
     c.rect(x + width * 0.12, y, width * 0.83, duration)
     c.setFont(c._fontname, font_size_hour)
-    c.drawString(x + width * 0.13, y - font_size_hour, schedule)
+    # 枠からはみ出さないように折り返す (枠の高さに収まる行数まで)
+    max_lines = max(1, int(abs(duration) // font_size_hour))
+    lines = wrap_text(schedule, c._fontname, font_size_hour, width * 0.80, max_lines)
+    for i, line in enumerate(lines):
+        c.drawString(x + width * 0.13, y - font_size_hour * (i + 1), line)
 
 # --- ブロック描画の統合 ---
 def draw_common_skeleton(c, left, right, top, height, 
@@ -156,7 +186,7 @@ def create_day(c, left, top, width, height,
         for _, event_row in events.iterrows():
             if isinstance(event_row['event'], list):
                 for event in event_row['event']:
-                    draw_schedule(c, event['event'], event['event_start'], event['event_end'], 
+                    draw_schedule(c, event['event'], event['event_start'], event['event_end'],
                                   hour_start, hour_end, top_hour, left, width, h_hour, font_size_hour)
 
 def draw_empty_block(c, left, top, width, height, 

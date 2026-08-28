@@ -86,8 +86,8 @@ Below is a page of the generated PDF (A5, 4 days per page, Monday start, 6:00-22
 
 <img src="img/vercal_output_example.png" width="60%"/>
 
-Each day has three memo circles at the top, hour lines, and 10-minute dots. Events are drawn as boxes; an event without an end time is drawn as a single line.  
-1日ごとに，上部のメモ欄 (丸3つ)，時間線，10分ごとの点がある．予定は枠で描かれ，終了時刻のないものは線1本で描かれる．
+Each day has three memo circles at the top, hour lines, and 10-minute dots. Events are drawn as boxes; an event without an end time is drawn as a single line, and a long event name is wrapped inside the box.  
+1日ごとに，上部のメモ欄 (丸3つ)，時間線，10分ごとの点がある．予定は枠で描かれ，終了時刻のないものは線1本で描かれる．予定名が長いときは枠の中で折り返す．
 
 ## Run with Phthon on your PC Pythonでの実行
 
