@@ -175,6 +175,11 @@ def calendar_weekly_vertical(year, month=range(12), start_april=True, starts_wit
                              hour_start=6, hour_end=24, df_event=pd.DataFrame(), draw_day_box=False):
     if not calendar_path:
         calendar_path = f'{year}_calendar.pdf'
+    if hour_end <= hour_start:
+        raise ValueError(f'hour_end ({hour_end}) は hour_start ({hour_start}) より大きくする')
+    if df_event.empty:
+        # 予定がないときも 'date' 列を持たせる (create_day が参照するため)
+        df_event = pd.DataFrame(columns=['date', 'event'])
     df_year = create_year_df(year, start_april=start_april, starts_with_mon=starts_with_mon, adjust_left=adjust_left)
     c = canvas.Canvas(calendar_path, pagesize=pagesize)
     width, height = pagesize

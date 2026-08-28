@@ -2,6 +2,24 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 
+def to_date_str(value):
+    """
+    normalize a date cell into 'YYYY-MM-DD'
+    Excel の日付セルは Timestamp で読まれるので，文字列と両方を受ける
+    """
+    if isinstance(value, str):
+        return datetime.strptime(value, '%Y-%m-%d').date().strftime('%Y-%m-%d')
+    return pd.Timestamp(value).date().strftime('%Y-%m-%d')
+
+def to_time_str(value):
+    """
+    normalize a time cell into 'H:MM'
+    Excel の時刻セルは datetime.time で読まれるので，文字列と両方を受ける
+    """
+    if isinstance(value, str):
+        return value
+    return f'{value.hour}:{value.minute:02d}'
+
 def generate_schedule(input_df):
     """
     generate schedule from dataframe
@@ -24,10 +42,7 @@ def generate_schedule(input_df):
             except_list = row['except'].split(';')
         else:
             except_list = []
-        except_dates = [
-            datetime.strptime(date, '%Y-%m-%d').date().strftime('%Y-%m-%d')
-            for date in except_list
-        ]
+        except_dates = [to_date_str(date.strip()) for date in except_list]
         dates_df = exclude_dates(dates_df, except_dates)
         results.append(dates_df)
     return pd.concat(results, ignore_index=True)
@@ -38,8 +53,8 @@ def generate_dates(period_start, period_end, week_of_day, event_start, event_end
     """
     week_of_day_map = {'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3, 'fri': 4, 'sat': 5, 'sun': 6}
     target_weekday = week_of_day_map[week_of_day.lower()]
-    start_date = datetime.strptime(period_start, '%Y-%m-%d').date()
-    end_date = datetime.strptime(period_end, '%Y-%m-%d').date()
+    start_date = datetime.strptime(to_date_str(period_start), '%Y-%m-%d').date()
+    end_date = datetime.strptime(to_date_str(period_end), '%Y-%m-%d').date()
     days_until_target_weekday = (target_weekday - start_date.weekday()) % 7
     current_date = start_date + timedelta(days=days_until_target_weekday)
     dates = []
@@ -76,11 +91,10 @@ def create_event_dict(row):
     """
     create event dict from dataframe row
     """
-    event_dict = {'event_start': row['event_start']}
-    if not pd.isna(row['event_end']):
-        event_dict['event_end'] = row['event_end']
-    event_dict['event'] = row['event']
-    return event_dict
+    event_start = to_time_str(row['event_start'])
+    # 終了時刻がないときは開始時刻と同じにする (線1本で描かれる)
+    event_end = event_start if pd.isna(row['event_end']) else to_time_str(row['event_end'])
+    return {'event_start': event_start, 'event_end': event_end, 'event': row['event']}
 
 if __name__ == '__main__':
     # 使用例
